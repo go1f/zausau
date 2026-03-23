@@ -96,6 +96,21 @@ go run ./cmd/senscan validate -manifest testdata/datasets/negative-manifest.json
 ./scripts/refresh_negative_public_fixtures.sh
 ```
 
+## 跨平台构建
+
+构建常用发行产物到 `dist/`：
+
+```bash
+./scripts/build_release.sh
+```
+
+默认会生成：
+
+- `dist/senscan-windows-amd64.exe`
+- `dist/senscan-linux-arm64`
+- `dist/senscan-darwin-arm64`
+- `dist/checksums.txt`
+
 ## 迭代建议
 
 1. 先补更多公开测试集到 `testdata/datasets/`
