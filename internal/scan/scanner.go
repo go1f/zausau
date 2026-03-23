@@ -20,11 +20,30 @@ type Scanner struct {
 	engine *rules.Engine
 }
 
+type ProgressEvent struct {
+	CurrentFile     string
+	DiscoveredFiles int
+	DiscoveredBytes int64
+	ScannedFiles    int
+	SkippedFiles    int
+	BytesScanned    int64
+	Findings        int
+	WalkComplete    bool
+}
+
 func NewScanner(cfg model.Config, engine *rules.Engine) *Scanner {
 	return &Scanner{cfg: cfg, engine: engine}
 }
 
 func (s *Scanner) ScanPath(root string) (model.ScanResult, error) {
+	return s.scanPath(root, nil)
+}
+
+func (s *Scanner) ScanPathWithProgress(root string, progress func(ProgressEvent)) (model.ScanResult, error) {
+	return s.scanPath(root, progress)
+}
+
+func (s *Scanner) scanPath(root string, progress func(ProgressEvent)) (model.ScanResult, error) {
 	type fileJob struct {
 		path string
 		size int64
@@ -40,9 +59,17 @@ func (s *Scanner) ScanPath(root string) (model.ScanResult, error) {
 		go func() {
 			defer workers.Done()
 			for job := range jobs {
+				emitProgress(progress, ProgressEvent{CurrentFile: job.path})
 				findings, stats := s.scanFile(job.path, job.size)
 				findingsCh <- findings
 				statsCh <- stats
+				emitProgress(progress, ProgressEvent{
+					CurrentFile:  job.path,
+					ScannedFiles: stats.FilesScanned,
+					SkippedFiles: stats.FilesSkipped,
+					BytesScanned: stats.BytesScanned,
+					Findings:     len(findings),
+				})
 			}
 		}()
 	}
@@ -63,6 +90,7 @@ func (s *Scanner) ScanPath(root string) (model.ScanResult, error) {
 			}
 			if shouldIgnorePath(path, s.cfg.IgnorePaths) || shouldIgnoreExt(path, s.cfg.IgnoreExts) {
 				skipped++
+				emitProgress(progress, ProgressEvent{SkippedFiles: 1})
 				return nil
 			}
 			info, err := d.Info()
@@ -71,11 +99,17 @@ func (s *Scanner) ScanPath(root string) (model.ScanResult, error) {
 			}
 			if info.Size() > s.cfg.MaxFileSize {
 				skipped++
+				emitProgress(progress, ProgressEvent{SkippedFiles: 1})
 				return nil
 			}
+			emitProgress(progress, ProgressEvent{
+				DiscoveredFiles: 1,
+				DiscoveredBytes: info.Size(),
+			})
 			jobs <- fileJob{path: path, size: info.Size()}
 			return nil
 		})
+		emitProgress(progress, ProgressEvent{WalkComplete: true})
 	}()
 
 	go func() {
@@ -85,7 +119,6 @@ func (s *Scanner) ScanPath(root string) (model.ScanResult, error) {
 	}()
 
 	var result model.ScanResult
-	result.Stats.FilesSkipped = skipped
 	for statsCh != nil || findingsCh != nil {
 		select {
 		case findings, ok := <-findingsCh:
@@ -104,6 +137,7 @@ func (s *Scanner) ScanPath(root string) (model.ScanResult, error) {
 			result.Stats.BytesScanned += stats.BytesScanned
 		}
 	}
+	result.Stats.FilesSkipped += skipped
 
 	sort.SliceStable(result.Findings, func(i, j int) bool {
 		if result.Findings[i].File == result.Findings[j].File {
@@ -116,6 +150,12 @@ func (s *Scanner) ScanPath(root string) (model.ScanResult, error) {
 	})
 
 	return result, walkErr
+}
+
+func emitProgress(progress func(ProgressEvent), event ProgressEvent) {
+	if progress != nil {
+		progress(event)
+	}
 }
 
 func (s *Scanner) scanFile(path string, size int64) ([]model.Finding, model.ScanStats) {

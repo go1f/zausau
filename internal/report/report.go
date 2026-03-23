@@ -1,9 +1,11 @@
 package report
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io"
+	"sort"
 
 	"github.com/jyufu/sensitive-info-scan/internal/model"
 )
@@ -40,6 +42,103 @@ func WriteScanText(w io.Writer, result model.ScanResult) error {
 		}
 	}
 	return nil
+}
+
+func WriteScanCSVSummary(w io.Writer, result model.ScanResult) error {
+	writer := csv.NewWriter(w)
+	defer writer.Flush()
+
+	if err := writer.Write([]string{
+		"rule_id",
+		"category",
+		"severity",
+		"reason",
+		"count",
+		"file_count",
+		"max_score",
+		"sample_file",
+		"sample_line",
+		"sample_match",
+		"sample_excerpt",
+	}); err != nil {
+		return err
+	}
+
+	type groupKey struct {
+		RuleID   string
+		Category string
+		Severity string
+		Reason   string
+	}
+	type groupSummary struct {
+		key      groupKey
+		count    int
+		maxScore float64
+		files    map[string]struct{}
+		sample   model.Finding
+	}
+
+	groups := make(map[groupKey]*groupSummary)
+	for _, finding := range result.Findings {
+		key := groupKey{
+			RuleID:   finding.RuleID,
+			Category: finding.Category,
+			Severity: finding.Severity,
+			Reason:   finding.Reason,
+		}
+		group := groups[key]
+		if group == nil {
+			group = &groupSummary{
+				key:      key,
+				maxScore: finding.Score,
+				files:    map[string]struct{}{finding.File: {}},
+				sample:   finding,
+			}
+			groups[key] = group
+		}
+		group.count++
+		group.files[finding.File] = struct{}{}
+		if finding.Score > group.maxScore {
+			group.maxScore = finding.Score
+		}
+	}
+
+	summaries := make([]*groupSummary, 0, len(groups))
+	for _, group := range groups {
+		summaries = append(summaries, group)
+	}
+	sort.SliceStable(summaries, func(i, j int) bool {
+		if summaries[i].count != summaries[j].count {
+			return summaries[i].count > summaries[j].count
+		}
+		if summaries[i].key.Category != summaries[j].key.Category {
+			return summaries[i].key.Category < summaries[j].key.Category
+		}
+		if summaries[i].key.RuleID != summaries[j].key.RuleID {
+			return summaries[i].key.RuleID < summaries[j].key.RuleID
+		}
+		return summaries[i].key.Reason < summaries[j].key.Reason
+	})
+
+	for _, summary := range summaries {
+		if err := writer.Write([]string{
+			summary.key.RuleID,
+			summary.key.Category,
+			summary.key.Severity,
+			summary.key.Reason,
+			fmt.Sprintf("%d", summary.count),
+			fmt.Sprintf("%d", len(summary.files)),
+			fmt.Sprintf("%.2f", summary.maxScore),
+			summary.sample.File,
+			fmt.Sprintf("%d", summary.sample.Line),
+			summary.sample.Redacted,
+			summary.sample.Excerpt,
+		}); err != nil {
+			return err
+		}
+	}
+
+	return writer.Error()
 }
 
 func WriteValidationText(w io.Writer, result model.ValidationReport) error {

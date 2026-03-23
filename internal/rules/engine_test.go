@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/jyufu/sensitive-info-scan/internal/model"
@@ -60,4 +61,16 @@ func TestEngineDetectsCredentialAndPhone(t *testing.T) {
 	if skipped := engine.ScanLine("demo.txt", 2, `token = "your_token_here"`); len(skipped) != 0 {
 		t.Fatalf("expected placeholder token to be ignored")
 	}
+	if len(findings) > 0 && !containsAll(findings[0].Excerpt, "<<<", ">>>") {
+		t.Fatalf("expected highlighted excerpt, got %q", findings[0].Excerpt)
+	}
+}
+
+func containsAll(value string, parts ...string) bool {
+	for _, part := range parts {
+		if !strings.Contains(value, part) {
+			return false
+		}
+	}
+	return true
 }

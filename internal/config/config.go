@@ -22,7 +22,7 @@ func Load(path string) (model.Config, error) {
 		cfg.Workers = runtime.NumCPU()
 	}
 	if cfg.MaxFileSize <= 0 {
-		cfg.MaxFileSize = 2 << 20
+		cfg.MaxFileSize = 64 << 20
 	}
 	if cfg.DefaultMinScore <= 0 {
 		cfg.DefaultMinScore = 0.55

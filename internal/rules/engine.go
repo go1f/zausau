@@ -110,12 +110,20 @@ func compileRule(rule model.Rule) (compiledRule, error) {
 
 func (e *Engine) ScanLine(path string, lineNo int, line string) []model.Finding {
 	findings := make([]model.Finding, 0, 4)
+	var (
+		assignments         []assignment
+		assignmentsPrepared bool
+	)
 	for _, rule := range e.rules {
 		switch strings.ToLower(rule.rule.Kind) {
 		case "regex":
 			findings = append(findings, e.scanRegexRule(path, lineNo, line, rule)...)
 		case "field":
-			findings = append(findings, e.scanFieldRule(path, lineNo, line, rule)...)
+			if !assignmentsPrepared {
+				assignments = extractAssignments(line)
+				assignmentsPrepared = true
+			}
+			findings = append(findings, e.scanFieldRule(path, lineNo, line, rule, assignments)...)
 		}
 	}
 	sort.SliceStable(findings, func(i, j int) bool {
@@ -161,8 +169,7 @@ func (e *Engine) scanRegexRule(path string, lineNo int, line string, rule compil
 	return findings
 }
 
-func (e *Engine) scanFieldRule(path string, lineNo int, line string, rule compiledRule) []model.Finding {
-	assignments := extractAssignments(line)
+func (e *Engine) scanFieldRule(path string, lineNo int, line string, rule compiledRule, assignments []assignment) []model.Finding {
 	if rule.rule.RequireAssignment && len(assignments) == 0 {
 		return nil
 	}
@@ -296,6 +303,7 @@ func matchAny(regs []*regexp.Regexp, value string) bool {
 }
 
 func buildFinding(path string, lineNo, column int, line, match string, rule model.Rule, score float64, reason string) model.Finding {
+	redacted := redact(match)
 	return model.Finding{
 		File:     path,
 		Line:     lineNo,
@@ -306,10 +314,53 @@ func buildFinding(path string, lineNo, column int, line, match string, rule mode
 		Severity: rule.Severity,
 		Score:    score,
 		Match:    match,
-		Redacted: redact(match),
-		Excerpt:  trimExcerpt(line),
+		Redacted: redacted,
+		Excerpt:  buildExcerpt(line, match, redacted),
 		Reason:   reason,
 	}
+}
+
+func buildExcerpt(line, match, redacted string) string {
+	line = strings.TrimSpace(line)
+	if line == "" {
+		return line
+	}
+	idx := strings.Index(line, match)
+	if idx < 0 {
+		return trimExcerpt(line)
+	}
+	const contextWidth = 60
+	start := idx - contextWidth
+	if start < 0 {
+		start = 0
+	}
+	end := idx + len(match) + contextWidth
+	if end > len(line) {
+		end = len(line)
+	}
+
+	var out strings.Builder
+	if start > 0 {
+		out.WriteString("...")
+	}
+	out.WriteString(strings.TrimSpace(line[start:idx]))
+	if out.Len() > 0 && !strings.HasSuffix(out.String(), " ") {
+		out.WriteByte(' ')
+	}
+	out.WriteString("<<<")
+	out.WriteString(redacted)
+	out.WriteString(">>>")
+	if idx+len(match) < end {
+		suffix := strings.TrimSpace(line[idx+len(match) : end])
+		if suffix != "" {
+			out.WriteByte(' ')
+			out.WriteString(suffix)
+		}
+	}
+	if end < len(line) {
+		out.WriteString("...")
+	}
+	return out.String()
 }
 
 func trimExcerpt(line string) string {

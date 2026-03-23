@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/jyufu/sensitive-info-scan/internal/config"
 	"github.com/jyufu/sensitive-info-scan/internal/learn"
@@ -46,7 +47,8 @@ func usage() error {
 func runScan(args []string) error {
 	fs := flag.NewFlagSet("scan", flag.ContinueOnError)
 	configPath := fs.String("config", defaultConfigPath, "path to rule config")
-	format := fs.String("format", "text", "output format: text or json")
+	format := fs.String("format", "text", "output format: text, json, or csv")
+	outputPath := fs.String("out", "", "output path for csv format; default is target directory with a timestamped filename")
 	minScore := fs.Float64("min-score", 0, "override minimum score")
 	workers := fs.Int("workers", 0, "override worker count")
 	maxFileSize := fs.Int64("max-file-size", 0, "override max file size")
@@ -73,6 +75,21 @@ func runScan(args []string) error {
 	switch strings.ToLower(*format) {
 	case "json":
 		return report.WriteJSON(os.Stdout, result)
+	case "csv":
+		path, err := resolveCSVOutputPath(target, *outputPath, time.Now())
+		if err != nil {
+			return err
+		}
+		file, err := os.Create(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		if err := report.WriteScanCSVSummary(file, result); err != nil {
+			return err
+		}
+		_, err = fmt.Fprintf(os.Stdout, "CSV report written to %s\n", path)
+		return err
 	default:
 		return report.WriteScanText(os.Stdout, result)
 	}
@@ -384,4 +401,32 @@ func resolveReadablePath(path string) string {
 		return candidate
 	}
 	return path
+}
+
+func resolveCSVOutputPath(target, outputPath string, now time.Time) (string, error) {
+	if strings.TrimSpace(outputPath) != "" {
+		if filepath.IsAbs(outputPath) {
+			return outputPath, nil
+		}
+		return filepath.Abs(outputPath)
+	}
+
+	targetPath := target
+	if strings.TrimSpace(targetPath) == "" {
+		targetPath = "."
+	}
+	targetPath = resolveReadablePath(targetPath)
+	absTarget, err := filepath.Abs(targetPath)
+	if err != nil {
+		return "", err
+	}
+
+	dir := absTarget
+	info, err := os.Stat(absTarget)
+	if err == nil && !info.IsDir() {
+		dir = filepath.Dir(absTarget)
+	}
+
+	filename := fmt.Sprintf("senscan-report-%s.csv", now.Format("20060102-150405"))
+	return filepath.Join(dir, filename), nil
 }
