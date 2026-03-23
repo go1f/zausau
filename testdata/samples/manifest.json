@@ -1,0 +1,60 @@
+{
+  "dataset": "built-in-samples",
+  "cases": [
+    {
+      "file": "testdata/samples/fixtures/mixed.txt",
+      "expected": [
+        {
+          "rule_id": "cn-mainland-mobile",
+          "category": "personal_contact",
+          "match_contains": "13912345678"
+        },
+        {
+          "rule_id": "generic-credential-field",
+          "category": "credential",
+          "match_contains": "sk_live_abc123456789XYZ"
+        },
+        {
+          "rule_id": "generic-credential-field",
+          "category": "credential",
+          "match_contains": "Str0ngP@ssw0rd!"
+        },
+        {
+          "rule_id": "cn-id-card",
+          "category": "government_id",
+          "match_contains": "11010519491231002X"
+        },
+        {
+          "rule_id": "geo-coordinate-field",
+          "category": "location_data",
+          "match_contains": "39.9042"
+        },
+        {
+          "rule_id": "geo-coordinate-field",
+          "category": "location_data",
+          "match_contains": "116.4074"
+        },
+        {
+          "rule_id": "biometric-field",
+          "category": "biometric_data",
+          "match_contains": "ZmFjZV9lbWJlZGRpbmdfZGF0YQ=="
+        },
+        {
+          "rule_id": "social-graph-field",
+          "category": "social_graph",
+          "match_contains": "[\"u1001\",\"u1002\"]"
+        },
+        {
+          "rule_id": "media-field",
+          "category": "personal_media",
+          "match_contains": "/private/data/alice.jpg"
+        },
+        {
+          "rule_id": "private-key-block",
+          "category": "cryptographic_key",
+          "match_contains": "-----BEGIN PRIVATE KEY-----"
+        }
+      ]
+    }
+  ]
+}

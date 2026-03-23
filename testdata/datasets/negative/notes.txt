@@ -1,0 +1,8 @@
+This file documents field names only:
+- password
+- secret
+- token
+- api_key
+- session
+
+No real values are present here.

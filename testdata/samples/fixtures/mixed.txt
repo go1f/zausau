@@ -1,0 +1,14 @@
+phone = "13912345678"
+backup_phone = "13800138000"
+token = "your_token_here"
+api_key = "sk_live_abc123456789XYZ"
+password = "Str0ngP@ssw0rd!"
+session = "550e8400-e29b-41d4-a716-446655440000"
+secret = "5f4dcc3b5aa765d61d8327deb882cf99"
+idcard = "11010519491231002X"
+latitude = 39.9042
+longitude = 116.4074
+face_embedding = "base64:ZmFjZV9lbWJlZGRpbmdfZGF0YQ=="
+friend_list = "[\"u1001\",\"u1002\"]"
+profile_photo = "/private/data/alice.jpg"
+-----BEGIN PRIVATE KEY-----

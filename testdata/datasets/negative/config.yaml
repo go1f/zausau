@@ -1,0 +1,10 @@
+credentials:
+  token: your_token_here
+  api_key: ${API_KEY}
+  password: changeme
+  secret_key: "<secret>"
+contact:
+  mobile: "13800138000"
+  address: "<address>"
+biometric:
+  face_embedding: "<face-vector>"

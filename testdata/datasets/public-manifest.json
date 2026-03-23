@@ -1,0 +1,70 @@
+{
+  "dataset": "public-secret-fixtures",
+  "cases": [
+    {
+      "file": "testdata/datasets/public/trufflesecurity_test_keys_keys.txt",
+      "expected": [
+        {
+          "rule_id": "private-key-block",
+          "category": "cryptographic_key",
+          "match_contains": "-----BEGIN OPENSSH PRIVATE KEY-----"
+        }
+      ]
+    },
+    {
+      "file": "testdata/datasets/public/trufflesecurity_test_keys_new_key.ini",
+      "expected": [
+        {
+          "rule_id": "aws-access-key-id",
+          "category": "credential",
+          "match_contains": "AKIAQYLPMN5HHHFPZAM2"
+        },
+        {
+          "rule_id": "aws-secret-access-key",
+          "category": "credential",
+          "match_contains": "1tUm636uS1yOEcfP5pvfqJ/ml36mF7AkyHsEU0IU"
+        }
+      ]
+    },
+    {
+      "file": "testdata/datasets/public/detect_secrets_private_key.txt",
+      "expected": [
+        {
+          "rule_id": "private-key-block",
+          "category": "cryptographic_key",
+          "match_contains": "-----BEGIN OPENSSH PRIVATE KEY-----"
+        }
+      ]
+    },
+    {
+      "file": "testdata/datasets/public/detect_secrets_each_secret.py",
+      "expected": [
+        {
+          "rule_id": "generic-credential-field",
+          "category": "credential",
+          "match_contains": "c2VjcmV0IG1lc3NhZ2Ugc28geW91J2xsIG5ldmVyIGd1ZXNzIG15IHBhc3N3b3Jk"
+        },
+        {
+          "rule_id": "aws-access-key-id",
+          "category": "credential",
+          "match_contains": "AKIAIOSFODNN7EXAMPLE"
+        },
+        {
+          "rule_id": "aws-secret-access-key",
+          "category": "credential",
+          "match_contains": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+        }
+      ]
+    },
+    {
+      "file": "testdata/datasets/public/gitleaks_ignoreCommit.go",
+      "expected": [
+        {
+          "rule_id": "aws-access-key-id",
+          "category": "credential",
+          "match_contains": "AKIALALEMEL33243OLIA"
+        }
+      ]
+    }
+  ]
+}

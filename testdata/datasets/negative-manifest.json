@@ -1,0 +1,120 @@
+{
+  "dataset": "negative-fixtures",
+  "cases": [
+    {
+      "group": "negative-docs",
+      "file": "testdata/datasets/negative/docs.md",
+      "expected": []
+    },
+    {
+      "group": "negative-schema",
+      "file": "testdata/datasets/negative/schema.json",
+      "expected": []
+    },
+    {
+      "group": "negative-examples",
+      "file": "testdata/datasets/negative/env.example",
+      "expected": []
+    },
+    {
+      "group": "negative-examples",
+      "file": "testdata/datasets/negative/config.yaml",
+      "expected": []
+    },
+    {
+      "group": "negative-docs",
+      "file": "testdata/datasets/negative/notes.txt",
+      "expected": []
+    },
+    {
+      "group": "negative-near-miss",
+      "file": "testdata/datasets/negative/near_miss_fields.json",
+      "expected": []
+    },
+    {
+      "group": "negative-provider-placeholders",
+      "file": "testdata/datasets/negative/provider_near_misses.env",
+      "expected": []
+    },
+    {
+      "group": "negative-identifier-noise",
+      "file": "testdata/datasets/negative/noise_identifiers.txt",
+      "expected": []
+    },
+    {
+      "group": "negative-allowlisted",
+      "file": "testdata/datasets/negative/allowlisted.diff",
+      "expected": []
+    },
+    {
+      "group": "negative-generated-near-miss",
+      "file": "testdata/datasets/negative/generated_near_miss_matrix.txt",
+      "expected": []
+    },
+    {
+      "group": "negative-generated-provider-placeholders",
+      "file": "testdata/datasets/negative/generated_provider_placeholder_matrix.env",
+      "expected": []
+    },
+    {
+      "group": "negative-generated-docs",
+      "file": "testdata/datasets/negative/generated_docs_snippets.md",
+      "expected": []
+    },
+    {
+      "group": "negative-public-env",
+      "file": "testdata/datasets/negative/public_n8n_env_local_example.env",
+      "expected": []
+    },
+    {
+      "group": "negative-public-env",
+      "file": "testdata/datasets/negative/public_fastapi_fullstack_env.example",
+      "expected": []
+    },
+    {
+      "group": "negative-public-env",
+      "file": "testdata/datasets/negative/public_calcom_env_example.env",
+      "expected": []
+    },
+    {
+      "group": "negative-public-openapi",
+      "file": "testdata/datasets/negative/public_swagger_petstore_openapi.yaml",
+      "expected": []
+    },
+    {
+      "group": "negative-public-helm",
+      "file": "testdata/datasets/negative/public_bitnami_postgresql_values.yaml",
+      "expected": []
+    },
+    {
+      "group": "negative-public-helm",
+      "file": "testdata/datasets/negative/public_prometheus_kube_prometheus_values.yaml",
+      "expected": []
+    },
+    {
+      "group": "negative-public",
+      "file": "testdata/datasets/negative/public_detect_secrets_file_with_no_secrets.py",
+      "expected": []
+    },
+    {
+      "group": "negative-public",
+      "file": "testdata/datasets/negative/public_detect_secrets_only_comments.yaml",
+      "expected": []
+    },
+    {
+      "group": "negative-public",
+      "file": "testdata/datasets/negative/public_detect_secrets_config.md",
+      "expected": []
+    },
+    {
+      "group": "negative-public",
+      "file": "testdata/datasets/negative/public_detect_secrets_sample.diff",
+      "expected": []
+    },
+    {
+      "group": "negative-public",
+      "file": "testdata/datasets/negative/public_gitleaks_simple.toml",
+      "expected": []
+    }
+  ]
+}

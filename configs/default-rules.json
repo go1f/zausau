@@ -1,0 +1,468 @@
+{
+  "version": "1",
+  "workers": 0,
+  "max_file_size": 2097152,
+  "default_min_score": 0.55,
+  "ignore_paths": [
+    ".git",
+    "node_modules",
+    "vendor",
+    "dist",
+    "build",
+    ".next",
+    ".idea"
+  ],
+  "ignore_extensions": [
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".pdf",
+    ".zip",
+    ".gz",
+    ".tar",
+    ".mp4",
+    ".mp3",
+    ".avi",
+    ".mov",
+    ".woff",
+    ".woff2"
+  ],
+  "filters": {
+    "placeholder_values": [
+      "changeme",
+      "change_me",
+      "changeit",
+      "changethis",
+      "placeholder",
+      "null",
+      "undefined",
+      "nil",
+      "none",
+      "n/a",
+      "demo",
+      "sample",
+      "dummy",
+      "test",
+      "redacted",
+      "strongpassword",
+      "some_pass",
+      "secret",
+      "password",
+      "token",
+      "api_key",
+      "private_key"
+    ],
+    "placeholder_patterns": [
+      "(?i)^(?:your_.+|example.+|sample.+|demo.+|test.+|fake.+|mock.+|<[^>]+>|\\{\\{.+\\}\\})$",
+      "(?i)^(?:xxxxx+|aaaaa+|111111+|123456(?:78|789|7890)?)$",
+      "(?i).*(?:placeholder|deadbeef|cafebabe|feedface).*"
+    ],
+    "masked_patterns": [
+      "^[*xX#-]{6,}$",
+      "^(?:\\*{3,}\\w{0,4}|\\w{0,4}\\*{3,})$"
+    ],
+    "hash_patterns": [
+      "(?i)^(?:[a-f0-9]{32}|[a-f0-9]{40}|[a-f0-9]{64}|[a-f0-9]{128})$"
+    ],
+    "uuid_patterns": [
+      "(?i)^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
+    ],
+    "variable_patterns": [
+      "^\\$\\{[A-Z0-9_]+\\}$",
+      "^(?:process\\.env\\.[A-Z0-9_]+|os\\.getenv\\(.+\\)|System\\.getenv\\(.+\\)|ENV\\[[^\\]]+\\])$",
+      "^[A-Z][A-Z0-9_]*_[A-Z0-9_]+$"
+    ]
+  },
+  "rules": [
+    {
+      "id": "private-key-block",
+      "name": "Private Key Block",
+      "kind": "regex",
+      "category": "cryptographic_key",
+      "severity": "critical",
+      "description": "PEM private key block header",
+      "patterns": [
+        "-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----"
+      ],
+      "score": {
+        "base": 0.96,
+        "field_boost": 0.01,
+        "entropy_boost": 0,
+        "assignment_boost": 0
+      }
+    },
+    {
+      "id": "jwt-token",
+      "name": "JWT Token",
+      "kind": "regex",
+      "category": "login_token",
+      "severity": "high",
+      "description": "Bearer style JWT token",
+      "keywords": [
+        "authorization",
+        "bearer",
+        "token",
+        "jwt"
+      ],
+      "patterns": [
+        "eyJ[A-Za-z0-9_-]{8,}\\.[A-Za-z0-9._-]{8,}\\.[A-Za-z0-9._-]{8,}"
+      ],
+      "min_entropy": 3.2,
+      "score": {
+        "base": 0.72,
+        "field_boost": 0.08,
+        "entropy_boost": 0.08,
+        "assignment_boost": 0
+      }
+    },
+    {
+      "id": "aws-access-key-id",
+      "name": "AWS Access Key ID",
+      "kind": "regex",
+      "category": "credential",
+      "severity": "high",
+      "description": "AWS access key identifier",
+      "patterns": [
+        "\\bAKIA[0-9A-Z]{16}\\b"
+      ],
+      "score": {
+        "base": 0.88,
+        "field_boost": 0.04,
+        "entropy_boost": 0,
+        "assignment_boost": 0
+      }
+    },
+    {
+      "id": "aws-secret-access-key",
+      "name": "AWS Secret Access Key",
+      "kind": "field",
+      "category": "credential",
+      "severity": "critical",
+      "description": "AWS secret access key with assignment context",
+      "field_patterns": [
+        "(?i)(?:aws_secret_access_key|awssecretaccesskey|secret_access_key)"
+      ],
+      "value_patterns": [
+        "^[A-Za-z0-9/+=]{40}$"
+      ],
+      "exclude_field_patterns": [
+        "(?i)(?:description|hint|help|label|example|comment)$"
+      ],
+      "exclude_value_patterns": [
+        "(?i).*(?:placeholder|deadbeef|cafebabe|feedface).*"
+      ],
+      "min_entropy": 3.0,
+      "require_assignment": true,
+      "score": {
+        "base": 0.78,
+        "field_boost": 0.12,
+        "entropy_boost": 0.08,
+        "assignment_boost": 0.12
+      }
+    },
+    {
+      "id": "github-token",
+      "name": "GitHub Token",
+      "kind": "regex",
+      "category": "credential",
+      "severity": "high",
+      "description": "GitHub personal or scoped access token",
+      "patterns": [
+        "\\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{30,255}\\b",
+        "\\bgithub_pat_[A-Za-z0-9_]{40,255}\\b"
+      ],
+      "score": {
+        "base": 0.88,
+        "field_boost": 0.04,
+        "entropy_boost": 0,
+        "assignment_boost": 0
+      }
+    },
+    {
+      "id": "stripe-secret-key",
+      "name": "Stripe Secret Key",
+      "kind": "regex",
+      "category": "credential",
+      "severity": "high",
+      "description": "Stripe secret key",
+      "patterns": [
+        "\\bsk_(?:live|test)_[0-9A-Za-z]{16,}\\b"
+      ],
+      "score": {
+        "base": 0.86,
+        "field_boost": 0.04,
+        "entropy_boost": 0,
+        "assignment_boost": 0
+      }
+    },
+    {
+      "id": "slack-token",
+      "name": "Slack Token",
+      "kind": "regex",
+      "category": "credential",
+      "severity": "high",
+      "description": "Slack API token",
+      "patterns": [
+        "\\bxox(?:b|p|a|r|s)-[A-Za-z0-9-]{10,100}\\b"
+      ],
+      "exclude_value_patterns": [
+        "(?i)^xox(?:b|p|a|r|s)-example(?:-[a-z0-9]+)*$"
+      ],
+      "score": {
+        "base": 0.86,
+        "field_boost": 0.04,
+        "entropy_boost": 0,
+        "assignment_boost": 0
+      }
+    },
+    {
+      "id": "google-api-key",
+      "name": "Google API Key",
+      "kind": "regex",
+      "category": "credential",
+      "severity": "high",
+      "description": "Google style API key",
+      "patterns": [
+        "\\bAIza[0-9A-Za-z_-]{35}\\b"
+      ],
+      "score": {
+        "base": 0.86,
+        "field_boost": 0.04,
+        "entropy_boost": 0,
+        "assignment_boost": 0
+      }
+    },
+    {
+      "id": "cn-mainland-mobile",
+      "name": "China Mainland Mobile",
+      "kind": "regex",
+      "category": "personal_contact",
+      "severity": "medium",
+      "description": "中国大陆手机号",
+      "keywords": [
+        "phone",
+        "mobile",
+        "tel",
+        "contact",
+        "手机号"
+      ],
+      "patterns": [
+        "\\b1[3-9]\\d{9}\\b"
+      ],
+      "exclude_values": [
+        "13800138000"
+      ],
+      "score": {
+        "base": 0.72,
+        "field_boost": 0.06,
+        "entropy_boost": 0,
+        "assignment_boost": 0
+      }
+    },
+    {
+      "id": "cn-id-card",
+      "name": "China Resident ID",
+      "kind": "regex",
+      "category": "government_id",
+      "severity": "high",
+      "description": "18位中国居民身份证号",
+      "keywords": [
+        "idcard",
+        "identity",
+        "身份证",
+        "cert_no",
+        "id_no"
+      ],
+      "patterns": [
+        "\\b[1-9]\\d{5}(?:18|19|20)\\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\\d|3[01])\\d{3}[0-9Xx]\\b"
+      ],
+      "validation": "cn_id_checksum",
+      "score": {
+        "base": 0.78,
+        "field_boost": 0.08,
+        "entropy_boost": 0,
+        "assignment_boost": 0
+      }
+    },
+    {
+      "id": "generic-credential-field",
+      "name": "Generic Credential Field",
+      "kind": "field",
+      "category": "credential",
+      "severity": "high",
+      "description": "字段名暗示登录凭证、密钥或密码",
+      "field_patterns": [
+        "(?i)(?:password|passwd|pwd|passphrase|secret|secret_key|app_secret|privatekey|private_key|accesskey|access_key|api[_-]?key|token|cookie|session(?:id)?|seed|licenseSn)"
+      ],
+      "exclude_field_patterns": [
+        "(?i)(?:policy|description|hint|help|label|name|type|format|example|comment|notice|domain|timeout|retention|export|notes?|selector)$",
+        "(?i)(?:password|secret|token)key$",
+        "(?i)(?:password|secret|token)file$",
+        "(?i)^(?:detect-secrets|gitleaks)$"
+      ],
+      "value_patterns": [
+        "^[^\\s]{6,}$"
+      ],
+      "exclude_value_patterns": [
+        "(?i)^(?:bearer\\s+)?(?:null|undefined|changeme|placeholder)$",
+        "(?i).*(?:example|placeholder|your[_-]?token|your[_-]?key|deadbeef|cafebabe|feedface).*",
+        "^/[A-Za-z0-9._/-]+$"
+      ],
+      "min_entropy": 2.5,
+      "require_assignment": true,
+      "score": {
+        "base": 0.36,
+        "field_boost": 0.18,
+        "entropy_boost": 0.12,
+        "assignment_boost": 0.12
+      }
+    },
+    {
+      "id": "personal-contact-field",
+      "name": "Personal Contact Field",
+      "kind": "field",
+      "category": "personal_contact",
+      "severity": "medium",
+      "description": "手机号、地址、定位等个人联系方式字段",
+      "field_patterns": [
+        "(?i)(?:phone|mobile|contact_phone|receiver_phone|address|home_address|contact_email|receiver_email|user_email|email_address|location|home_location)"
+      ],
+      "exclude_field_patterns": [
+        "(?i)(?:hint|help|label|name|type|format|example|comment|template|precision|note)$",
+        "(?i)(?:^email$|from|sender|server|host|support|smtp|next_public)"
+      ],
+      "value_patterns": [
+        "(?i)^(?:[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}|1[3-9]\\d{9}|[\\p{Han}A-Za-z0-9#.,\\-\\s]{8,}|-?\\d{1,3}(?:\\.\\d{3,10})?,\\s*-?\\d{1,3}(?:\\.\\d{3,10})?)$"
+      ],
+      "exclude_values": [
+        "13800138000"
+      ],
+      "exclude_value_patterns": [
+        "(?i).*(?:example|placeholder|docs?\\s+only|rounded to|city level).*",
+        "(?i)^[^@]+@(?:example\\.com|localhost|swagger\\.io|cal\\.com|yourselfhostedcal\\.com)$"
+      ],
+      "require_assignment": true,
+      "score": {
+        "base": 0.34,
+        "field_boost": 0.18,
+        "entropy_boost": 0,
+        "assignment_boost": 0.12
+      }
+    },
+    {
+      "id": "geo-coordinate-field",
+      "name": "Geo Coordinate Field",
+      "kind": "field",
+      "category": "location_data",
+      "severity": "medium",
+      "description": "经纬度与轨迹字段",
+      "field_patterns": [
+        "(?i)(?:latitude|longitude|lat|lng|lon|geo|coordinate|trajectory|track)"
+      ],
+      "value_patterns": [
+        "^-?\\d{1,3}(?:\\.\\d{3,10})?(?:,\\s*-?\\d{1,3}(?:\\.\\d{3,10})?)?$"
+      ],
+      "require_assignment": true,
+      "score": {
+        "base": 0.34,
+        "field_boost": 0.16,
+        "entropy_boost": 0,
+        "assignment_boost": 0.12
+      }
+    },
+    {
+      "id": "biometric-field",
+      "name": "Biometric Field",
+      "kind": "field",
+      "category": "biometric_data",
+      "severity": "high",
+      "description": "人脸、指纹、虹膜、声纹、基因等字段",
+      "field_patterns": [
+        "(?i)(?:fingerprint|voiceprint|iris|face(?:_feature|_embedding|_vector)?|gene|dna|palmprint|earshape)"
+      ],
+      "exclude_field_patterns": [
+        "(?i)(?:description|notice|version|label|hint|help|example)$"
+      ],
+      "value_patterns": [
+        "^(?:[^\\s]{8,}|\\[[^\\]]+\\])$"
+      ],
+      "exclude_value_patterns": [
+        "(?i).*(?:example|synthetic|redacted|demo|docs?\\s+only).*"
+      ],
+      "require_assignment": true,
+      "score": {
+        "base": 0.40,
+        "field_boost": 0.20,
+        "entropy_boost": 0,
+        "assignment_boost": 0.12
+      }
+    },
+    {
+      "id": "financial-profile-field",
+      "name": "Financial Profile Field",
+      "kind": "field",
+      "category": "financial_profile",
+      "severity": "high",
+      "description": "资产、信用、虚拟财产、风评记录等",
+      "field_patterns": [
+        "(?i)(?:balance|asset|credit|credit_score|wallet|virtual_asset|risk_profile|rating_record|loan)"
+      ],
+      "value_patterns": [
+        ".{2,}"
+      ],
+      "require_assignment": true,
+      "score": {
+        "base": 0.36,
+        "field_boost": 0.18,
+        "entropy_boost": 0,
+        "assignment_boost": 0.12
+      }
+    },
+    {
+      "id": "social-graph-field",
+      "name": "Social Graph Field",
+      "kind": "field",
+      "category": "social_graph",
+      "severity": "medium",
+      "description": "通讯录、好友、群组等",
+      "field_patterns": [
+        "(?i)(?:address_book|contacts|friend_list|friends|group_list|groups|chat_history|message_log|call_history|browser_history)"
+      ],
+      "exclude_field_patterns": [
+        "(?i)(?:description|notice|hint|help|example|export|retention|label)$"
+      ],
+      "value_patterns": [
+        "^(?:\\[[^\\]]+\\]|\\{[^\\}]+\\}|[^,\\s]{2,}(?:,[^,\\s]{2,})+)$"
+      ],
+      "require_assignment": true,
+      "score": {
+        "base": 0.34,
+        "field_boost": 0.18,
+        "entropy_boost": 0,
+        "assignment_boost": 0.12
+      }
+    },
+    {
+      "id": "media-field",
+      "name": "Media Field",
+      "kind": "field",
+      "category": "personal_media",
+      "severity": "medium",
+      "description": "个人音视频图像数据字段",
+      "field_patterns": [
+        "(?i)(?:face_image|profile_photo|portrait|audio_blob|voice_sample|video_url|image_url|avatar)"
+      ],
+      "value_patterns": [
+        ".{4,}"
+      ],
+      "require_assignment": true,
+      "score": {
+        "base": 0.34,
+        "field_boost": 0.18,
+        "entropy_boost": 0,
+        "assignment_boost": 0.12
+      }
+    }
+  ]
+}

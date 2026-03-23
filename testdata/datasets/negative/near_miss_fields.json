@@ -1,0 +1,8 @@
+{
+  "password_policy": "Password must be at least 12 characters and include a number.",
+  "secret_label": "User-visible rollout flag for staged deployment.",
+  "token_description": "This token field is a placeholder shown in the settings UI.",
+  "api_key_hint": "Paste your API key here after creating one in the console.",
+  "session_timeout": "30m",
+  "licenseSn_help": "Shown on the sticker at the bottom of the device."
+}

@@ -1,0 +1,5 @@
+diff --git a/.env.example b/.env.example
++TOKEN=your_token_here
++API_KEY=${API_KEY}
++password=changeme # pragma: allowlist secret
++aws_secret_access_key=EXAMPLEONLYVALUE # gitleaks:allow
