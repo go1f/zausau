@@ -325,7 +325,7 @@ func buildExcerpt(line, match, redacted string) string {
 	if line == "" {
 		return line
 	}
-	idx := strings.Index(line, match)
+	idx, matchedText := findExcerptMatch(line, match)
 	if idx < 0 {
 		return trimExcerpt(line)
 	}
@@ -334,7 +334,7 @@ func buildExcerpt(line, match, redacted string) string {
 	if start < 0 {
 		start = 0
 	}
-	end := idx + len(match) + contextWidth
+	end := idx + len(matchedText) + contextWidth
 	if end > len(line) {
 		end = len(line)
 	}
@@ -350,8 +350,8 @@ func buildExcerpt(line, match, redacted string) string {
 	out.WriteString("<<<")
 	out.WriteString(redacted)
 	out.WriteString(">>>")
-	if idx+len(match) < end {
-		suffix := strings.TrimSpace(line[idx+len(match) : end])
+	if idx+len(matchedText) < end {
+		suffix := strings.TrimSpace(line[idx+len(matchedText) : end])
 		if suffix != "" {
 			out.WriteByte(' ')
 			out.WriteString(suffix)
@@ -361,6 +361,19 @@ func buildExcerpt(line, match, redacted string) string {
 		out.WriteString("...")
 	}
 	return out.String()
+}
+
+func findExcerptMatch(line, match string) (int, string) {
+	if idx := strings.Index(line, match); idx >= 0 {
+		return idx, match
+	}
+	escaped := strings.Trim(strconv.Quote(match), `"`)
+	if escaped != match {
+		if idx := strings.Index(line, escaped); idx >= 0 {
+			return idx, escaped
+		}
+	}
+	return -1, ""
 }
 
 func trimExcerpt(line string) string {

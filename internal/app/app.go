@@ -49,6 +49,7 @@ func runScan(args []string) error {
 	configPath := fs.String("config", defaultConfigPath, "path to rule config")
 	format := fs.String("format", "text", "output format: text, json, or csv")
 	outputPath := fs.String("out", "", "output path for csv format; default is target directory with a timestamped filename")
+	progress := fs.Bool("progress", true, "show live scan progress on stderr when attached to a terminal")
 	minScore := fs.Float64("min-score", 0, "override minimum score")
 	workers := fs.Int("workers", 0, "override worker count")
 	maxFileSize := fs.Int64("max-file-size", 0, "override max file size")
@@ -67,7 +68,9 @@ func runScan(args []string) error {
 	_ = cfg
 
 	scanner := scan.NewScanner(cfg, engine)
-	result, err := scanner.ScanPath(target)
+	progressReporter := newScanProgressReporter(os.Stderr, *progress)
+	result, err := scanner.ScanPathWithProgress(target, progressReporter.Emit)
+	progressReporter.Close()
 	if err != nil {
 		return err
 	}
