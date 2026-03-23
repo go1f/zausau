@@ -1,8 +1,6 @@
 package rules
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
 	"regexp"
 	"sort"
@@ -303,7 +301,6 @@ func matchAny(regs []*regexp.Regexp, value string) bool {
 }
 
 func buildFinding(path string, lineNo, column int, line, match string, rule model.Rule, score float64, reason string) model.Finding {
-	redacted := redact(match)
 	return model.Finding{
 		File:     path,
 		Line:     lineNo,
@@ -314,8 +311,8 @@ func buildFinding(path string, lineNo, column int, line, match string, rule mode
 		Severity: rule.Severity,
 		Score:    score,
 		Match:    match,
-		Redacted: redacted,
-		Excerpt:  buildExcerpt(line, match, redacted),
+		Redacted: match,
+		Excerpt:  buildExcerpt(line, match, match),
 		Reason:   reason,
 	}
 }
@@ -382,15 +379,6 @@ func trimExcerpt(line string) string {
 		return line
 	}
 	return line[:157] + "..."
-}
-
-func redact(value string) string {
-	trimmed := strings.TrimSpace(value)
-	if len(trimmed) <= 6 {
-		return "***"
-	}
-	sum := sha1.Sum([]byte(trimmed))
-	return trimmed[:3] + "***" + trimmed[len(trimmed)-2:] + "#" + hex.EncodeToString(sum[:])[:8]
 }
 
 func dedupeFindings(input []model.Finding) []model.Finding {

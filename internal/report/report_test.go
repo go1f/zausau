@@ -19,8 +19,9 @@ func TestWriteScanCSVSummaryGroupsSimilarFindings(t *testing.T) {
 				Severity: "high",
 				Reason:   "field=api_key",
 				Score:    0.82,
-				Redacted: "sk_***",
-				Excerpt:  `api_key=<<<sk_***>>>`,
+				Match:    "sk_live_abc123",
+				Redacted: "sk_live_abc123",
+				Excerpt:  `api_key=<<<sk_live_abc123>>>`,
 			},
 			{
 				File:     "b.env",
@@ -30,8 +31,9 @@ func TestWriteScanCSVSummaryGroupsSimilarFindings(t *testing.T) {
 				Severity: "high",
 				Reason:   "field=api_key",
 				Score:    0.79,
-				Redacted: "sk_***",
-				Excerpt:  `api_key=<<<sk_***>>>`,
+				Match:    "sk_live_abc123",
+				Redacted: "sk_live_abc123",
+				Excerpt:  `api_key=<<<sk_live_abc123>>>`,
 			},
 			{
 				File:     "c.env",
@@ -41,8 +43,9 @@ func TestWriteScanCSVSummaryGroupsSimilarFindings(t *testing.T) {
 				Severity: "high",
 				Reason:   "pattern-match",
 				Score:    0.88,
-				Redacted: "AKI***",
-				Excerpt:  `access_key=<<<AKI***>>>`,
+				Match:    "AKIAIOSFODNN7EXAMPLE",
+				Redacted: "AKIAIOSFODNN7EXAMPLE",
+				Excerpt:  `access_key=<<<AKIAIOSFODNN7EXAMPLE>>>`,
 			},
 		},
 	}
@@ -59,7 +62,10 @@ func TestWriteScanCSVSummaryGroupsSimilarFindings(t *testing.T) {
 	if !strings.Contains(text, "aws-access-key-id,credential,high,pattern-match,1,1,0.88") {
 		t.Fatalf("expected second grouped row, got %s", text)
 	}
-	if !strings.Contains(text, "api_key=<<<sk_***>>>") {
+	if !strings.Contains(text, "api_key=<<<sk_live_abc123>>>") {
 		t.Fatalf("expected highlighted sample excerpt, got %s", text)
+	}
+	if !strings.Contains(text, "AKIAIOSFODNN7EXAMPLE") {
+		t.Fatalf("expected raw sample match in csv, got %s", text)
 	}
 }

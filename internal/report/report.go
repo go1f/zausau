@@ -48,7 +48,7 @@ func WriteFindingText(w io.Writer, finding model.Finding) error {
 		finding.Line,
 		finding.Category,
 		finding.Reason,
-		finding.Redacted,
+		finding.Match,
 	); err != nil {
 		return err
 	}
@@ -143,7 +143,7 @@ func WriteScanCSVSummary(w io.Writer, result model.ScanResult) error {
 			fmt.Sprintf("%.2f", summary.maxScore),
 			summary.sample.File,
 			fmt.Sprintf("%d", summary.sample.Line),
-			summary.sample.Redacted,
+			summary.sample.Match,
 			summary.sample.Excerpt,
 		}); err != nil {
 			return err

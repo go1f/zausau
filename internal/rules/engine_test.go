@@ -64,6 +64,9 @@ func TestEngineDetectsCredentialAndPhone(t *testing.T) {
 	if len(findings) > 0 && !containsAll(findings[0].Excerpt, "<<<", ">>>") {
 		t.Fatalf("expected highlighted excerpt, got %q", findings[0].Excerpt)
 	}
+	if len(findings) > 0 && findings[0].Match != findings[0].Redacted {
+		t.Fatalf("expected unmasked output, got match=%q redacted=%q", findings[0].Match, findings[0].Redacted)
+	}
 }
 
 func containsAll(value string, parts ...string) bool {

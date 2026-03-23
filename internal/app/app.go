@@ -349,7 +349,7 @@ func validateManifest(scanner *scan.Scanner, manifest model.ValidationManifest) 
 				File:     finding.File,
 				RuleID:   finding.RuleID,
 				Category: finding.Category,
-				Match:    finding.Redacted,
+				Match:    finding.Match,
 				Reason:   finding.Reason,
 				Score:    finding.Score,
 			})
