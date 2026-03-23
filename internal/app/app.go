@@ -48,7 +48,8 @@ func runScan(args []string) error {
 	fs := flag.NewFlagSet("scan", flag.ContinueOnError)
 	configPath := fs.String("config", defaultConfigPath, "path to rule config")
 	format := fs.String("format", "text", "output format: text, json, or csv")
-	outputPath := fs.String("out", "", "output path for csv format; default is target directory with a timestamped filename")
+	outputPath := fs.String("out", "", "output path for csv report; default is target directory with a timestamped filename")
+	writeCSV := fs.Bool("csv", true, "write a grouped csv report to the target directory by default")
 	progress := fs.Bool("progress", true, "show live scan progress on stderr when attached to a terminal")
 	minScore := fs.Float64("min-score", 0, "override minimum score")
 	workers := fs.Int("workers", 0, "override worker count")
@@ -67,23 +68,22 @@ func runScan(args []string) error {
 	}
 	_ = cfg
 
+	consoleFormat := strings.ToLower(*format)
 	scanner := scan.NewScanner(cfg, engine)
-	progressReporter := newScanProgressReporter(os.Stderr, *progress)
+	progressReporter := newScanProgressReporter(os.Stdout, os.Stderr, *progress, consoleFormat == "text")
 	result, err := scanner.ScanPathWithProgress(target, progressReporter.Emit)
 	progressReporter.Close()
 	if err != nil {
 		return err
 	}
 
-	switch strings.ToLower(*format) {
-	case "json":
-		return report.WriteJSON(os.Stdout, result)
-	case "csv":
-		path, err := resolveCSVOutputPath(target, *outputPath, time.Now())
+	var csvPath string
+	if *writeCSV || consoleFormat == "csv" {
+		csvPath, err = resolveCSVOutputPath(target, *outputPath, time.Now())
 		if err != nil {
 			return err
 		}
-		file, err := os.Create(path)
+		file, err := os.Create(csvPath)
 		if err != nil {
 			return err
 		}
@@ -91,10 +91,26 @@ func runScan(args []string) error {
 		if err := report.WriteScanCSVSummary(file, result); err != nil {
 			return err
 		}
-		_, err = fmt.Fprintf(os.Stdout, "CSV report written to %s\n", path)
+	}
+
+	switch consoleFormat {
+	case "json":
+		if csvPath != "" {
+			_, _ = fmt.Fprintf(os.Stderr, "CSV report written to %s\n", csvPath)
+		}
+		return report.WriteJSON(os.Stdout, result)
+	case "csv":
+		_, err = fmt.Fprintf(os.Stdout, "CSV report written to %s\n", csvPath)
 		return err
 	default:
-		return report.WriteScanText(os.Stdout, result)
+		if err := report.WriteScanSummaryText(os.Stdout, result); err != nil {
+			return err
+		}
+		if csvPath != "" {
+			_, err = fmt.Fprintf(os.Stdout, "CSV report written to %s\n", csvPath)
+			return err
+		}
+		return nil
 	}
 }
 

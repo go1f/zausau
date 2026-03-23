@@ -17,6 +17,18 @@ func WriteJSON(w io.Writer, value any) error {
 }
 
 func WriteScanText(w io.Writer, result model.ScanResult) error {
+	if err := WriteScanSummaryText(w, result); err != nil {
+		return err
+	}
+	for _, finding := range result.Findings {
+		if err := WriteFindingText(w, finding); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func WriteScanSummaryText(w io.Writer, result model.ScanResult) error {
 	if _, err := fmt.Fprintf(w, "Scanned %d files, skipped %d, bytes %d, findings %d\n",
 		result.Stats.FilesScanned,
 		result.Stats.FilesSkipped,
@@ -25,23 +37,23 @@ func WriteScanText(w io.Writer, result model.ScanResult) error {
 	); err != nil {
 		return err
 	}
-	for _, finding := range result.Findings {
-		if _, err := fmt.Fprintf(w, "[%s][%.2f] %s:%d %s %s -> %s\n",
-			finding.RuleID,
-			finding.Score,
-			finding.File,
-			finding.Line,
-			finding.Category,
-			finding.Reason,
-			finding.Redacted,
-		); err != nil {
-			return err
-		}
-		if _, err := fmt.Fprintf(w, "  %s\n", finding.Excerpt); err != nil {
-			return err
-		}
-	}
 	return nil
+}
+
+func WriteFindingText(w io.Writer, finding model.Finding) error {
+	if _, err := fmt.Fprintf(w, "[%s][%.2f] %s:%d %s %s -> %s\n",
+		finding.RuleID,
+		finding.Score,
+		finding.File,
+		finding.Line,
+		finding.Category,
+		finding.Reason,
+		finding.Redacted,
+	); err != nil {
+		return err
+	}
+	_, err := fmt.Fprintf(w, "  %s\n", finding.Excerpt)
+	return err
 }
 
 func WriteScanCSVSummary(w io.Writer, result model.ScanResult) error {

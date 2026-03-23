@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/jyufu/sensitive-info-scan/internal/model"
 )
@@ -138,6 +139,24 @@ func TestRunLearnSimulatesValidationEvenWithBlockingStaticFindings(t *testing.T)
 	}
 	if report.ModelReview.Summary != "reviewed" {
 		t.Fatalf("expected model review to run, got %q", report.ModelReview.Summary)
+	}
+}
+
+func TestResolveCSVOutputPathUsesTargetDirectory(t *testing.T) {
+	tmpDir := t.TempDir()
+	targetDir := filepath.Join(tmpDir, "scan-root")
+	if err := os.MkdirAll(targetDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	path, err := resolveCSVOutputPath(targetDir, "", time.Date(2026, 3, 23, 10, 20, 30, 0, time.Local))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := filepath.Join(targetDir, "senscan-report-20260323-102030.csv")
+	if path != expected {
+		t.Fatalf("expected %q, got %q", expected, path)
 	}
 }
 

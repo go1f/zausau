@@ -28,6 +28,7 @@ type ProgressEvent struct {
 	SkippedFiles    int
 	BytesScanned    int64
 	Findings        int
+	FindingsList    []model.Finding
 	WalkComplete    bool
 }
 
@@ -69,6 +70,7 @@ func (s *Scanner) scanPath(root string, progress func(ProgressEvent)) (model.Sca
 					SkippedFiles: stats.FilesSkipped,
 					BytesScanned: stats.BytesScanned,
 					Findings:     len(findings),
+					FindingsList: findings,
 				})
 			}
 		}()

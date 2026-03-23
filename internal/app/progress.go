@@ -4,16 +4,20 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
+	"github.com/jyufu/sensitive-info-scan/internal/report"
 	"github.com/jyufu/sensitive-info-scan/internal/scan"
 )
 
 type scanProgressReporter struct {
-	enabled bool
-	events  chan scan.ProgressEvent
-	done    chan struct{}
+	enabled         bool
+	progressEnabled bool
+	streamFindings  bool
+	stdout          *os.File
+	stderr          *os.File
+	events          chan scan.ProgressEvent
+	done            chan struct{}
 }
 
 type scanProgressState struct {
@@ -28,16 +32,20 @@ type scanProgressState struct {
 	walkComplete    bool
 }
 
-func newScanProgressReporter(stderr *os.File, enabled bool) *scanProgressReporter {
+func newScanProgressReporter(stdout, stderr *os.File, showProgress, streamFindings bool) *scanProgressReporter {
 	reporter := &scanProgressReporter{
-		enabled: enabled && isTerminal(stderr),
+		progressEnabled: showProgress && isTerminal(stderr),
+		streamFindings:  streamFindings,
+		stdout:          stdout,
+		stderr:          stderr,
 	}
+	reporter.enabled = reporter.progressEnabled || reporter.streamFindings
 	if !reporter.enabled {
 		return reporter
 	}
 	reporter.events = make(chan scan.ProgressEvent, 1024)
 	reporter.done = make(chan struct{})
-	go reporter.run(stderr)
+	go reporter.run()
 	return reporter
 }
 
@@ -56,7 +64,7 @@ func (r *scanProgressReporter) Close() {
 	<-r.done
 }
 
-func (r *scanProgressReporter) run(stderr *os.File) {
+func (r *scanProgressReporter) run() {
 	defer close(r.done)
 
 	ticker := time.NewTicker(120 * time.Millisecond)
@@ -64,18 +72,25 @@ func (r *scanProgressReporter) run(stderr *os.File) {
 
 	state := scanProgressState{start: time.Now()}
 	var lastWidth int
-	var mu sync.Mutex
 
+	clearLine := func() {
+		if !r.progressEnabled {
+			return
+		}
+		fmt.Fprintf(r.stderr, "\r%s\r", strings.Repeat(" ", lastWidth))
+		lastWidth = 0
+	}
 	render := func() {
-		mu.Lock()
-		defer mu.Unlock()
+		if !r.progressEnabled {
+			return
+		}
 
 		line := formatProgressLine(state)
 		padding := ""
 		if len(line) < lastWidth {
 			padding = strings.Repeat(" ", lastWidth-len(line))
 		}
-		fmt.Fprintf(stderr, "\r%s%s", line, padding)
+		fmt.Fprintf(r.stderr, "\r%s%s", line, padding)
 		lastWidth = len(line)
 	}
 
@@ -83,7 +98,7 @@ func (r *scanProgressReporter) run(stderr *os.File) {
 		select {
 		case event, ok := <-r.events:
 			if !ok {
-				fmt.Fprintf(stderr, "\r%s\r", strings.Repeat(" ", lastWidth))
+				clearLine()
 				return
 			}
 			state.discoveredFiles += event.DiscoveredFiles
@@ -95,6 +110,12 @@ func (r *scanProgressReporter) run(stderr *os.File) {
 			state.walkComplete = state.walkComplete || event.WalkComplete
 			if strings.TrimSpace(event.CurrentFile) != "" {
 				state.currentFile = event.CurrentFile
+			}
+			if r.streamFindings && len(event.FindingsList) > 0 {
+				clearLine()
+				for _, finding := range event.FindingsList {
+					_ = report.WriteFindingText(r.stdout, finding)
+				}
 			}
 		case <-ticker.C:
 			render()
