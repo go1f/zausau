@@ -148,8 +148,11 @@ func runLearn(args []string) error {
 		return err
 	}
 
+	resolvedPromptPath := resolveReadablePath(*promptPath)
+	resolvedReviewPromptPath := resolveReadablePath(*reviewPromptPath)
+
 	client := learn.NewClient(*endpoint, *modelName)
-	suggestion, err := client.Suggest(context.Background(), cfg, validation, *promptPath)
+	suggestion, err := client.Suggest(context.Background(), cfg, validation, resolvedPromptPath)
 	if err != nil {
 		return err
 	}
@@ -189,7 +192,7 @@ func runLearn(args []string) error {
 		if err != nil {
 			return err
 		}
-		modelReview, err = client.ReviewSuggestion(context.Background(), cfg, suggestion, simulatedValidation, staticFindings, *reviewPromptPath)
+		modelReview, err = client.ReviewSuggestion(context.Background(), cfg, suggestion, simulatedValidation, staticFindings, resolvedReviewPromptPath)
 		if err != nil {
 			modelReview = model.ModelReview{
 				Summary:  "model reviewer failed",
@@ -224,7 +227,7 @@ func runLearn(args []string) error {
 }
 
 func loadEngine(configPath string, workers int, maxFileSize int64, minScore float64) (model.Config, *rules.Engine, error) {
-	cfg, err := config.Load(configPath)
+	cfg, err := config.Load(resolveReadablePath(configPath))
 	if err != nil {
 		return cfg, nil, err
 	}
@@ -246,7 +249,7 @@ func loadEngine(configPath string, workers int, maxFileSize int64, minScore floa
 
 func loadManifest(path string) (model.ValidationManifest, error) {
 	var manifest model.ValidationManifest
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(resolveReadablePath(path))
 	if err != nil {
 		return manifest, err
 	}
@@ -359,4 +362,26 @@ func normalizeCaseGroup(testCase model.ValidationCase) string {
 	default:
 		return "ungrouped"
 	}
+}
+
+func resolveReadablePath(path string) string {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return path
+	}
+	if filepath.IsAbs(path) {
+		return path
+	}
+	if _, err := os.Stat(path); err == nil {
+		return path
+	}
+	execPath, err := os.Executable()
+	if err != nil {
+		return path
+	}
+	candidate := filepath.Join(filepath.Dir(execPath), filepath.FromSlash(path))
+	if _, err := os.Stat(candidate); err == nil {
+		return candidate
+	}
+	return path
 }

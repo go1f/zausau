@@ -109,7 +109,10 @@ go run ./cmd/senscan validate -manifest testdata/datasets/negative-manifest.json
 - `dist/senscan-windows-amd64.exe`
 - `dist/senscan-linux-arm64`
 - `dist/senscan-darwin-arm64`
+- `dist/configs/default-rules.json`
 - `dist/checksums.txt`
+
+扫描命令默认会先找当前工作目录下的 `configs/default-rules.json`；如果不存在，再回退到可执行文件同级目录下的 `configs/default-rules.json`。因此直接分发 `dist/` 目录即可运行。
 
 ## 迭代建议
 
